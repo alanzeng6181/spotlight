@@ -1,7 +1,6 @@
 package algorithm_test
 
 import (
-	"fmt"
 	"math/rand"
 	"sync"
 	"testing"
@@ -11,10 +10,11 @@ import (
 
 type QuadNode algorithm.QuadNode[algorithm.Location]
 
+/*
 func TestQuadtree(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
-	const width = 10000000
-	const height = 10000000
+	const width = 70000
+	const height = 70000
 	tree := algorithm.MakeQuadTree[algorithm.Location](0.0, 0.0, algorithm.Float(width), algorithm.Float(height))
 	const count = 5000
 	const threadCount = 5000
@@ -29,38 +29,48 @@ func TestQuadtree(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	if ok, err := (*QuadNode)(tree.Root).Verify(count * threadCount); !ok {
+	if ok, err := tree.Root.Verify(count * threadCount); !ok {
 		t.Errorf("expected %d values, but it's not => %s", count*threadCount, err.Error())
 	}
-}
+}*/
 
-func (node *QuadNode) Verify(count int) (bool, error) {
-	if node.Size <= algorithm.MAX_NODES && (node.Children[0] != nil || node.Children[1] != nil || node.Children[2] != nil || node.Children[3] != nil) {
-		return false, fmt.Errorf("when there are less than %d locations, children should be nil", algorithm.MAX_NODES)
-	}
+func TestQuadtreeQueryingAndPopulating(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+	const width = 70000
+	const height = 70000
+	tree := algorithm.MakeQuadTree[algorithm.Location](0.0, 0.0, algorithm.Float(width), algorithm.Float(height))
+	const count = 75000000
+	locations:=make([]*algorithm.Location,0)
 
-	if node.Size > algorithm.MAX_NODES && (node.Children[0] == nil || node.Children[1] == nil ||
-		node.Children[2] == nil || node.Children[3] == nil || (node.Values != nil && len(node.Values) != 0)) {
-		return false, fmt.Errorf("when there are greater than %d locations, children should not be nil and values should be empty",
-			algorithm.MAX_NODES)
-	}
+	var wg sync.WaitGroup
+	wg.Add(2)
 
-	if node.Size != count || (len(node.Values) > 0 && node.Size != len(node.Values)) {
-		return false, fmt.Errorf("node size %d does not equal to count %d, or node values array does not match node size when it's not empty",
-			node.Size, count)
-	}
+	go func() {
+		for i := 0; i < count; i++ {
+			location := &algorithm.Location{algorithm.Float(rand.Int31n(width*100))/100.0, algorithm.Float((rand.Int31n(height*100))/100.0)}
+			tree.Add(location)
+			locations = append(locations, location)
+		}
+		wg.Done()
+	}()
 
-	if node.Size > algorithm.MAX_NODES {
-		sum := 0
-		for _, c := range node.Children {
-			sum += c.Size
-			if ok, err := (*QuadNode)(c).Verify(c.Size); !ok {
-				return false, err
+	go func() {
+		for i := 0; i < 1000; i++ {
+			time.Sleep(10 * time.Millisecond)
+			n := len(locations)
+			effectRadius := float32(1400.0)
+			if n > 0 {
+				picked := locations[rand.Int31n(int32(n))]
+				tree.FindNearby(float32(picked.X()),
+					float32(picked.Y()),
+					effectRadius)
 			}
 		}
-		if sum != node.Size {
-			return false, fmt.Errorf("node size is %d, but sum of children node size is %d", node.Size, sum)
-		}
+		wg.Done()
+	}()
+
+	wg.Wait()
+	if ok, err := tree.Root.Verify(count); !ok {
+		t.Errorf("expected %d values, but it's not => %s", count, err.Error())
 	}
-	return true, nil
 }

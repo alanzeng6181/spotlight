@@ -2,6 +2,7 @@ package main
 
 import (
 	"image/color"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -36,27 +37,30 @@ func dotsSimulation() {
 	dots := make([]*ui.Dot, 0)
 	go func() {
 		for i := 0; i < count; i++ {
-			time.Sleep(10 * time.Millisecond)
-			dot := ui.NewDot(color.White, 5.0, fyne.NewPos(float32(rand.Int31n(width*100))/100.0, float32(rand.Int31n(height*100))/100.0))
-			tree.Add(dot)
-			ct.Add((*canvas.Circle)(dot))
-			dots = append(dots, dot)
-			if i%30 == 0 {
-				ct.Refresh()
+			time.Sleep(5 * time.Millisecond)
+			dot := ui.NewDot(color.White, 5.0, fyne.NewPos(float32(rand.Int31n(width*99))/100.0, float32(rand.Int31n(height*99))/100.0))
+			if tree.Add(dot) {
+				ct.Add((*canvas.Circle)(dot))
+				dots = append(dots, dot)
+				if i%30 == 0 {
+					ct.Refresh()
+				}
+			} else {
+				log.Fatalf("Couldn't add dot at x:%f, y:%f", dot.X(), dot.Y())
 			}
 		}
 		ct.Refresh()
 	}()
 
 	go func() {
-		for {
-			time.Sleep(5 * time.Second)
+		for i := 0; i < 50; i++ {
+			time.Sleep(3 * time.Second)
 			n := len(dots)
 			effectRadius := float32(200.0)
 			if n > 0 {
 				red := color.RGBA{255, 0, 0, 1}
 				picked := dots[rand.Int31n(int32(n))]
-				picked.Glow(5.0, 1*time.Second, red)
+				picked.Glow(5.0, 2*time.Second, red)
 				surroundings := tree.FindNearby((picked.Position1.X+picked.Position2.X)/2,
 					(picked.Position1.Y+picked.Position2.Y)/2,
 					effectRadius)
@@ -65,9 +69,14 @@ func dotsSimulation() {
 					if dot == picked {
 						continue
 					}
-					dot.Glow(1.5, 1*time.Second, red)
+					dot.Glow(1.5, 2*time.Second, red)
 				}
 			}
+		}
+		if ok, err := tree.Root.Verify(count); !ok {
+			log.Fatalf("tree verification failed...%v", err)
+		} else {
+			log.Println("tree verification passed....")
 		}
 	}()
 

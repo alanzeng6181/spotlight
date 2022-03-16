@@ -31,13 +31,13 @@ func (dot Dot) Y() algorithm.Float {
 
 func (dot *Dot) Glow(sizeMultiply float32, duration time.Duration, glowColor color.Color) {
 	go func() {
-		originalSize := (*canvas.Circle)(dot).Size()
+		//originalSize := (*canvas.Circle)(dot).Size()
 		originalColor := dot.FillColor
-		(*canvas.Circle)(dot).Resize(fyne.NewSize(originalSize.Width*sizeMultiply, originalSize.Height*sizeMultiply))
+		//(*canvas.Circle)(dot).Resize(fyne.NewSize(originalSize.Width*sizeMultiply, originalSize.Height*sizeMultiply))
 		dot.FillColor = glowColor
 		(*canvas.Circle)(dot).Refresh()
 		time.Sleep(duration)
-		(*canvas.Circle)(dot).Resize(originalSize)
+		//(*canvas.Circle)(dot).Resize(originalSize)
 		dot.FillColor = originalColor
 		(*canvas.Circle)(dot).Refresh()
 	}()
