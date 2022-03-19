@@ -10,9 +10,11 @@ import (
 	"strconv"
 )
 type QuadTree algorithm.QuadTree[algorithm.Location]
+
+//Draw draws the quadtree onto a png file.
 func (tree QuadTree) Draw(fileName string){
 	myimage := image.NewRGBA(image.Rect(0, 0, 10000, 10000)) // x1,y1,  x2,y2 of background rectangle
-	queue := make([]*algorithm.QuadNode[algorithm.Location], 0)
+	queue := make([]*algorithm.Quad[algorithm.Location], 0)
 	queue = append(queue, tree.Root)
 	for len(queue)>0{
 		node := queue[0]
@@ -40,7 +42,7 @@ func (tree QuadTree) Draw(fileName string){
 			}
 		}
 
-		for _, location := range node.Values{
+		for _, location := range node.Nodes{
 			const dotSize=20
 			dot := image.Rect((int)(location.X())-dotSize,(int)(location.Y())-dotSize, (int)(location.X())+dotSize, (int)(location.Y())+dotSize)
 			draw.Draw(myimage, dot, &image.Uniform{color.Black}, image.ZP, draw.Src)
@@ -60,7 +62,8 @@ func (tree QuadTree) Draw(fileName string){
 	png.Encode(myfile, myimage)
 }
 
-func generateAndDrawQuadTree() {
+//generateAndDrawQuadTree generates a quadtree and draws the tree
+func GenerateAndDrawQuadTree() {
 	tree := algorithm.MakeQuadTree[algorithm.Location](0.0, 0.0, 10000.0, 10000.0)
 	count := 600
 	if len(os.Args) > 1 {
@@ -69,7 +72,7 @@ func generateAndDrawQuadTree() {
 		}
 	}
 	for i := 0; i < count; i++ {
-		tree.Add(&algorithm.Location{algorithm.Float(rand.Int31n(1000000)) / 100.0, algorithm.Float((rand.Int31n(1000000)) / 100.0)})
+		tree.Add(algorithm.Location{algorithm.Float(rand.Int31n(1000000)) / 100.0, algorithm.Float((rand.Int31n(1000000)) / 100.0)})
 	}
 	(QuadTree)(tree).Draw("./bin/tree.png")
 }
